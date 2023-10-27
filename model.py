@@ -47,6 +47,7 @@ def get_model(device):
     model = PrunableNeuralModel().to(device)
     return model
 
-def prune_model():
-
-def reinit_model():
+def prune_model(model, rankings):
+    return model
+def reinit_model(model, weights):
+    return model

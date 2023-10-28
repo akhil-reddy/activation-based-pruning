@@ -34,6 +34,8 @@ Y_dev = torch.tensor(Y_dev, dtype=torch.long)
 
 activation = {}
 
+activation_weight_values = {}
+
 def getActivation(name):
     def hook(model, input, output):
         activation[name] = output.detach()
@@ -56,6 +58,11 @@ class CustomNeuralNetwork(nn.Module):
         h3 = self.layers[4].register_forward_hook(getActivation('layers[4]'))
         for layer in self.layers:
             x = layer(x)
+
+        # (activation)
+        for key, item in activation.items():
+            activation_weight_values[key] = item
+
         h1.remove()
         h2.remove()
         h3.remove()
@@ -94,8 +101,8 @@ def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
                     accuracy = (predictions == Y_batch.cpu().numpy()).mean()
                     print(f"Epoch: {epoch+1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
 
-st = time.time()
-train(model, train_loader, dev_loader, optimizer, criterion, 5000)
-et = time.time()
+# st = time.time()
+# train(model, train_loader, dev_loader, optimizer, criterion, 100)
+# et = time.time()
 
-print(et - st)
+# print(et - st)

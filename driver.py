@@ -1,5 +1,8 @@
 from examples.gradientDescent import *
 
+torch.manual_seed(30)
+random.seed(30)
+
 model = CustomNeuralNetwork(layer_dims).to(device)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=False)

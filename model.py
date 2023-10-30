@@ -53,10 +53,10 @@ def get_model(layer_dims, device):
 
 def prune_model_from_rankings(rankings, max_ranking, prune_percent=10):
     layers = []
-    for layerwise_rank in rankings:
+    for layer_index in range(len(rankings)):
         layer = []
-        for neuron_rank in layerwise_rank:
-            if neuron_rank > (1 - 0.01 * prune_percent) * max_ranking:
+        for neuron_rank in rankings[layer_index]:
+            if neuron_rank > (1 - 0.01 * prune_percent) * max_ranking[layer_index]:
                 layer.append(-1)
             else:
                 layer.append(1)

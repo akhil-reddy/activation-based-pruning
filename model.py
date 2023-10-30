@@ -77,6 +77,7 @@ def reinit_model(weights, layers, device):
         layer_dims.append(len([i for i in layer if i == 1]))
 
     model = get_model(layer_dims, device)
+    weights = torch.Tensor.tolist(weights)
 
     # Format new weights
     for i in range(len(layers)):
@@ -93,6 +94,6 @@ def reinit_model(weights, layers, device):
     # Reinitialize new weights to the network
     with torch.no_grad():
         for i in range(len(layers)):
-            model.layers[i].weight = torch.Tensor(weights[i])
+            model.layers[i].weight = torch.FloatTensor(weights[i])
 
     return model

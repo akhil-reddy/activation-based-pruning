@@ -86,6 +86,7 @@ print(model.activation_values)
 increment = 5
 for i in range(total_epochs-inital_iterations+1, total_epochs+1, increment):
     # call akhils function
-    scores = getRandomScores(weightMatrix)
-    pruned_model = model
-    train(model, train_loader, dev_loader, optimizer, criterion, increment)
+    rankings, max_ranking = getRandomScores(weightMatrix)
+    layers = prune_model_from_rankings(rankings,max_ranking)
+    pruned_model = reinit_model(list(weightMatrix.values()),layers,device)
+    train(pruned_model, train_loader, dev_loader, optimizer, criterion, increment)

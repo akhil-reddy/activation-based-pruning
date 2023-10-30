@@ -2,9 +2,11 @@ import random
 
 
 def getRandomScores(weightMatrix):
-    scoreCard = {}
+    networkScores = []
     for index in range(1, len(weightMatrix.keys())):
+        layerScores = []
         for neuron_Num in range(1, weightMatrix['weights['+str(2*index)+']'].shape[1]+1):
-            scoreCard['HiddenLayer'+str(index)+'_'+'Neuron'+str(neuron_Num)] = random.randint(1, 200)
+            layerScores.append(random.randint(1, 200))
+        networkScores.append(layerScores)
     
-    return scoreCard
+    return networkScores

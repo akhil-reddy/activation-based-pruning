@@ -11,6 +11,7 @@ class PrunableNeuralModel(nn.Module):
         super(PrunableNeuralModel, self).__init__()
 
         self.layers = nn.ModuleList()
+        self.activation_values = {}
 
         for i in range(1, len(layer_dims)):
             self.layers.append(nn.Linear(layer_dims[i - 1], layer_dims[i], bias=False))
@@ -35,9 +36,8 @@ class PrunableNeuralModel(nn.Module):
         for layer in self.layers:
             x = layer(x)
 
-        # print(activation)
-        # for key, item in activation.items():
-        #     print(key, item.size(dim=0))
+        for key, item in self.activation.items():
+            self.activation_values[key] = item
 
         h1.remove()
         h2.remove()
@@ -51,7 +51,7 @@ def get_model(layer_dims, device):
     return model
 
 
-def prune_model_from_rankings(rankings, max_ranking, prune_percent):
+def prune_model_from_rankings(rankings, max_ranking, prune_percent=10):
     layers = []
     for layerwise_rank in rankings:
         layer = []

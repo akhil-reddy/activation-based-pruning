@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-
 import ssl
+import math
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -56,7 +56,7 @@ def prune_model_from_rankings(rankings, max_ranking, prune_percent=10):
     for layer_index in range(len(rankings)):
         layer = []
         for neuron_rank in rankings[layer_index]:
-            if neuron_rank > (1 - 0.01 * prune_percent) * max_ranking[layer_index]:
+            if neuron_rank > max(1, (1 - 0.01 * prune_percent) * max_ranking[layer_index]):
                 layer.append(-1)
             else:
                 layer.append(1)
@@ -71,29 +71,43 @@ layers are from [1 to n] with n-1 elements
 '''
 
 
-def reinit_model(weights, layers, device):
-    layer_dims = []
+def reinit_model(weights, layers, device, input_layer):
+    layer_dims = [input_layer]
     for layer in layers:
         layer_dims.append(len([i for i in layer if i == 1]))
 
     model = get_model(layer_dims, device)
-    weights = torch.Tensor.tolist(weights)
+    for i in range(len(weights)):
+        weights[i] = torch.Tensor.tolist(weights[i])
 
+    new_weights = []
     # Format new weights
     for i in range(len(layers)):
+        layer_weights = []
+        curr_layer_pruned_neurons = []
         for j in range(len(layers[i])):
+            neuron_weights = weights[i][j]
             # Neuron to prune
             if layers[i][j] == -1:
-                # Remove weights from inflow edges, i.e., weights[i][j]
-                del weights[i][j]
                 if i + 1 != len(layers):
-                    # Remove weights from outflow edges, i.e., weights[i+1][][j]
-                    for k in range(len(layers[i + 1])):
-                        del weights[i + 1][k][j]
+                    curr_layer_pruned_neurons.append(j)
+            else:
+                layer_weights.append(neuron_weights)
+        new_weights.append(layer_weights)
+
+        if i + 1 != len(layers):
+            # Live neurons
+            live = [x for x in list(range(len(layers[i]))) if x not in curr_layer_pruned_neurons]
+            for k in range(len(layers[i + 1])):
+                live_outflow = []
+                # Only weights from live neurons in the current layer
+                for j in live:
+                    live_outflow.append(weights[i + 1][k][j])
+                weights[i + 1][k] = live_outflow
 
     # Reinitialize new weights to the network
     with torch.no_grad():
         for i in range(len(layers)):
-            model.layers[i].weight = torch.FloatTensor(weights[i])
+            model.layers[2*i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
     return model

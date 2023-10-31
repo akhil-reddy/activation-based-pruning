@@ -63,7 +63,7 @@ def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
             optimizer.step()
 
             # Logging the progress
-            if i % 10 == 0:
+            if i / 10 == 0:
                 with torch.no_grad():
                     predictions = torch.argmax(outputs, dim=1).cpu().numpy()
                     accuracy = (predictions == Y_batch.cpu().numpy()).mean()

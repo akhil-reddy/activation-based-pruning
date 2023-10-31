@@ -49,6 +49,7 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dev_dataset = TensorDataset(X_dev, Y_dev)
 dev_loader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=False)
 
+
 # Modified Training Loop
 def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
     model.train()
@@ -60,18 +61,17 @@ def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
             loss = criterion(outputs, Y_batch)
             loss.backward()
             optimizer.step()
-            
-            
+
             # Logging the progress
             if i % 10 == 0:
                 with torch.no_grad():
                     predictions = torch.argmax(outputs, dim=1).cpu().numpy()
                     accuracy = (predictions == Y_batch.cpu().numpy()).mean()
-                    print(f"Epoch: {epoch+1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
+                    print(f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
 
 
 total_epochs = 100
-inital_iterations = 50
+inital_iterations = 5
 train(model, train_loader, dev_loader, optimizer, criterion, inital_iterations)
 
 weightMatrix = {}
@@ -84,9 +84,12 @@ for name, param in model.state_dict().items():
 print(model.activation_values)
 
 increment = 5
-for i in range(total_epochs-inital_iterations+1, total_epochs+1, increment):
-    # call akhils function
+for i in range(inital_iterations + 1, total_epochs + 1, increment):
     rankings, max_ranking = getRandomScores(weightMatrix)
-    layers = prune_model_from_rankings(rankings,max_ranking)
-    pruned_model = reinit_model(list(weightMatrix.values()),layers,device)
-    train(pruned_model, train_loader, dev_loader, optimizer, criterion, increment)
+    layers = prune_model_from_rankings(rankings, max_ranking)
+    model = reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0])
+    train(model, train_loader, dev_loader, optimizer, criterion, increment)
+
+    for name, param in model.state_dict().items():
+        print(name, param)
+        weightMatrix[name] = param

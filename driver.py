@@ -88,6 +88,7 @@ for i in range(inital_iterations + 1, total_epochs + 1, increment):
     rankings, max_ranking = getRandomScores(weightMatrix)
     layers = prune_model_from_rankings(rankings, max_ranking)
     model = reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0])
+    optimizer = optim.SGD(model.parameters(), lr=0.1)
     train(model, train_loader, dev_loader, optimizer, criterion, increment)
 
     for name, param in model.state_dict().items():

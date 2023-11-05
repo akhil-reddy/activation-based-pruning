@@ -41,9 +41,9 @@ def getLocalRanks(weightMatrix, activationMatrix):
         avgActivationPerc = defaultdict(lambda: 0)
         maxActivationPerc = defaultdict(lambda: 0)
 
-        sampleSize = random.sample(range(1, 40000), 1000)
+        sampleSize = sorted(random.sample(range(1, 40000), 5000))
         for sample in sampleSize:
-            print(sample)
+            #print(sample)
             for targetNeuron in range(nextLayerNumOfNeurons):
                 totalActivationOfNeuron = weightedActivations[sample, targetNeuron]
                 for srcNeuron in range(currLayerNumOfNeurons):
@@ -57,7 +57,7 @@ def getLocalRanks(weightMatrix, activationMatrix):
             avgActivation= avgActivationPerc[neuron]/ (nextLayerNumOfNeurons * len(sampleSize))
             avgActivationPercTuples.append([neuron, avgActivation])
 
-        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1])
+        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1], reverse=True)
         rank = 1
         for neuronInfo in sortedActivationPerc:
             neuronInfo.append(rank)
@@ -70,7 +70,7 @@ def getLocalRanks(weightMatrix, activationMatrix):
         networkScores.append(ranks)
         maxScoreinLayer.append(len(sortedActivationPerc))
 
-    lastLayer = [1] * weightMatrix['layers.' + str(2 *(layer+1)) + '.weight'].shape[0]
+    lastLayer = [1] * weightMatrix['layers.' + str(2 *(layer)) + '.weight'].shape[0]
     networkScores.append(lastLayer)
     maxScoreinLayer.append(1)
 

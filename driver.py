@@ -37,7 +37,7 @@ Y_dev = torch.tensor(Y_dev, dtype=torch.long)
 
 activation = {}
 activation_weight_values = {}
-layer_dims = [784, 100, 80, 10]
+layer_dims = [784, 50, 30, 10]
 model = PrunableNeuralModel(layer_dims).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
@@ -70,20 +70,20 @@ def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
                     print(f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
 
 
-total_epochs = 1000
-inital_iterations = 500
+total_epochs = 400
+inital_iterations = 200
 train(model, train_loader, dev_loader, optimizer, criterion, inital_iterations)
 
 weightMatrix = {}
 # to get weights
 for name, param in model.state_dict().items():
-    print(name, param)
+    #print(name, param)
     weightMatrix[name] = param
 
 # to get activation values
-print(model.activation_values)
+#print(model.activation_values)
 
-increment = 250
+increment = 50
 for i in range(inital_iterations + 1, total_epochs + 1, increment):
     rankings, max_ranking = getLocalRanks(weightMatrix, model.activation_values)
     #rankings, max_ranking = getRandomScores(weightMatrix)
@@ -93,5 +93,5 @@ for i in range(inital_iterations + 1, total_epochs + 1, increment):
     train(model, train_loader, dev_loader, optimizer, criterion, increment)
 
     for name, param in model.state_dict().items():
-        print(name, param)
+        #print(name, param)
         weightMatrix[name] = param

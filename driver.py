@@ -18,7 +18,7 @@ random.seed(30)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-url = 'https://raw.githubusercontent.com/BudhiaRishabh/CSCI-567-ML/main/train.csv'
+url = '/Users/ronakjain/Desktop/CS567/Project/cs567-project/data/raw.githubusercontent.com_BudhiaRishabh_CSCI-567-ML_main_train.csv'
 data = pd.read_csv(url)
 data = shuffle(data, random_state=30)
 
@@ -37,7 +37,7 @@ Y_dev = torch.tensor(Y_dev, dtype=torch.long)
 
 activation = {}
 activation_weight_values = {}
-layer_dims = [784, 10, 10, 10]
+layer_dims = [784, 100, 80, 10]
 model = PrunableNeuralModel(layer_dims).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
@@ -70,8 +70,8 @@ def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
                     print(f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
 
 
-total_epochs = 100
-inital_iterations = 5
+total_epochs = 1000
+inital_iterations = 500
 train(model, train_loader, dev_loader, optimizer, criterion, inital_iterations)
 
 weightMatrix = {}
@@ -83,9 +83,10 @@ for name, param in model.state_dict().items():
 # to get activation values
 print(model.activation_values)
 
-increment = 5
+increment = 250
 for i in range(inital_iterations + 1, total_epochs + 1, increment):
-    rankings, max_ranking = getRandomScores(weightMatrix)
+    rankings, max_ranking = getLocalRanks(weightMatrix, model.activation_values)
+    #rankings, max_ranking = getRandomScores(weightMatrix)
     layers = prune_model_from_rankings(rankings, max_ranking)
     model = reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0])
     optimizer = optim.SGD(model.parameters(), lr=0.1)

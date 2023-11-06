@@ -70,7 +70,7 @@ Y_dev = torch.tensor(Y_dev, dtype=torch.long)
 
 activation = {}
 activation_weight_values = {}
-layer_dims = [784, 10, 10, 10]
+layer_dims = [784, 50, 30, 10]
 model = PrunableNeuralModel(layer_dims).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
@@ -81,6 +81,7 @@ train_dataset = TensorDataset(X_train, Y_train)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dev_dataset = TensorDataset(X_dev, Y_dev)
 dev_loader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=False)
+
 
 # Modified Training Loop
 def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
@@ -93,33 +94,37 @@ def train(model, train_loader, dev_loader, optimizer, criterion, epochs):
             loss = criterion(outputs, Y_batch)
             loss.backward()
             optimizer.step()
-            
-            
+
             # Logging the progress
-            if i % 10 == 0:
+            if i / 10 == 0:
                 with torch.no_grad():
                     predictions = torch.argmax(outputs, dim=1).cpu().numpy()
                     accuracy = (predictions == Y_batch.cpu().numpy()).mean()
-                    print(f"Epoch: {epoch+1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
+                    print(f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
 
 
-total_epochs = 100
-inital_iterations = 50
+total_epochs = 400
+inital_iterations = 200
 train(model, train_loader, dev_loader, optimizer, criterion, inital_iterations)
 
 weightMatrix = {}
 # to get weights
 for name, param in model.state_dict().items():
-    print(name, param)
+    #print(name, param)
     weightMatrix[name] = param
 
 # to get activation values
-print(model.activation_values)
+#print(model.activation_values)
 
-increment = 5
-for i in range(total_epochs-inital_iterations+1, total_epochs+1, increment):
-    # call akhils function
-    rankings, max_ranking = getRandomScores(weightMatrix)
-    layers = prune_model_from_rankings(rankings,max_ranking)
-    pruned_model = reinit_model(list(weightMatrix.values()),layers,device)
-    train(pruned_model, train_loader, dev_loader, optimizer, criterion, increment)
+increment = 50
+for i in range(inital_iterations + 1, total_epochs + 1, increment):
+    rankings, max_ranking = getLocalRanks(weightMatrix, model.activation_values)
+    #rankings, max_ranking = getRandomScores(weightMatrix)
+    layers = prune_model_from_rankings(rankings, max_ranking)
+    model = reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0])
+    optimizer = optim.SGD(model.parameters(), lr=0.1)
+    train(model, train_loader, dev_loader, optimizer, criterion, increment)
+
+    for name, param in model.state_dict().items():
+        #print(name, param)
+        weightMatrix[name] = param

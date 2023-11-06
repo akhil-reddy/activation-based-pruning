@@ -1,10 +1,14 @@
 from model import *
 from ranking import *
 
+import os
+from dotenv import load_dotenv
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from torchvision import datasets, transforms
 import random
 import time
 import pandas as pd
@@ -18,8 +22,37 @@ random.seed(30)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-url = 'https://raw.githubusercontent.com/BudhiaRishabh/CSCI-567-ML/main/train.csv'
+load_dotenv()
+url = os.environ['URL']
 data = pd.read_csv(url)
+
+print("Dataset Info:")
+print(data.info())
+
+# Display the first few rows of the dataset
+print("\nFirst 5 rows of the dataset:")
+print(data.head())
+
+# Summary statistics of the dataset
+print("\nSummary Statistics:")
+print(data.describe())
+
+# Number of rows and columns
+print("\nNumber of rows and columns:")
+print(data.shape)
+
+# Column names
+print("\nColumn Names:")
+print(data.columns)
+
+# Data types of columns
+print("\nData Types:")
+print(data.dtypes)
+
+# Missing values
+print("\nMissing Values:")
+print(data.isnull().sum())
+
 data = shuffle(data, random_state=30)
 
 data_dev = data.iloc[:1000].values

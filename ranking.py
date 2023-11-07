@@ -41,7 +41,7 @@ def getLocalRanks(weightMatrix, activationMatrix):
         avgActivationPerc = defaultdict(lambda: 0)
         maxActivationPerc = defaultdict(lambda: 0)
 
-        sampleSize = sorted(random.sample(range(1, 40000), 5000))
+        sampleSize = sorted(random.sample(range(1, len(weightedActivations)), 5000))
         for sample in sampleSize:
             #print(sample)
             for targetNeuron in range(nextLayerNumOfNeurons):

@@ -1,4 +1,4 @@
-from model import *
+from models.basic_feedforward import *
 from ranking import *
 
 import os
@@ -8,9 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-from torchvision import datasets, transforms
 import random
-import time
 import pandas as pd
 from sklearn.utils import shuffle
 import ssl

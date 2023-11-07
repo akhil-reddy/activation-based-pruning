@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import ssl
-import math
 
 ssl._create_default_https_context = ssl._create_unverified_context
 

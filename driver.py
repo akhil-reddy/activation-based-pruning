@@ -1,4 +1,4 @@
-from models.basic_feedforward import PrunableNeuralModel, prune_model_from_rankings, reinit_model
+from models.feedforward import PrunableNeuralModel, prune_model_from_rankings, reinit_model
 # Module Imports
 import random
 import torch
@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 from constants import parameter 
 
 # Local imports
-from models import basic_feedforward
+from models import feedforward
 from ranking import *
 
 # Import helper

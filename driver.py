@@ -17,7 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the Fashion MNIST dataset
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-train_dataset = datasets.FashionMNIST(root='./datasets', train=True, transform=transform, download=True)
+train_dataset = datasets.MNIST(root='./datasets', train=True, transform=transform, download=True)
 # test_dataset = datasets.FashionMNIST(root='./data', train=False, transform=transform, download=True)
 
 train_loader = DataLoader(train_dataset, batch_size=41000, shuffle=True)
@@ -49,7 +49,7 @@ def train(model, train_loader, optimizer, criterion, epochs):
                     print(f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
 
 total_epochs = 400
-inital_iterations = 200
+inital_iterations = 5
 train(model, train_loader, optimizer, criterion, inital_iterations)
 
 weightMatrix = {}

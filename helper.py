@@ -5,3 +5,5 @@ def switch(num):
         return "FashionMNIST"
     elif num == 3:
         return "CIFAR10"
+    elif num == 4:
+        return "CIFAR100"

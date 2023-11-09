@@ -15,7 +15,7 @@ from ranking import *
 # Import helper
 from helper import switch
 
-print('Choose a dataset from the below options \n 1. MNIST \n 2. FashionMNIST \n 3. CIFAR-10')
+print('Choose a dataset from the below options \n 1. MNIST \n 2. FashionMNIST \n 3. CIFAR-10 \n 4. CIFAR-100')
 print("Enter the value: ")
 val = int(input())
 dataset = switch(val)

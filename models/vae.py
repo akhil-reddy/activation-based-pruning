@@ -5,10 +5,10 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-class PrunableNeuralModel(nn.Module):
+class VAE(nn.Module):
 
     def __init__(self, input_dim=784, hidden_dim=400, latent_dim=200):
-        super(PrunableNeuralModel, self).__init__()
+        super(VAE, self).__init__()
 
         # encoder
         self.encoder = nn.Sequential(

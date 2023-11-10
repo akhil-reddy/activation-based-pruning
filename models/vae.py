@@ -64,10 +64,9 @@ class VAE(nn.Module):
         return layers
 
     '''
-
-        weights are from layer (0 to n] with n-1 elements
-        layers are from [1 to n] with n-1 elements
-        '''
+    weights are from layer (0 to n] with n-1 elements
+    layers are from [1 to n] with n-1 elements
+    '''
 
     def reinit_model(self, weights, layers, device, input_layer):
         layer_dims = [input_layer]

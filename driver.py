@@ -1,7 +1,5 @@
-from models.feedforward import PrunableNeuralModel, prune_model_from_rankings, reinit_model
+from models.feedforward import prune_model_from_rankings, reinit_model
 # Module Imports
-import random
-import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -9,7 +7,7 @@ from torchvision import datasets, transforms
 from constants import parameter 
 
 # Local imports
-from models import feedforward
+from model import get_model
 from ranking import *
 
 # Import helper
@@ -35,7 +33,7 @@ train_loader = DataLoader(train_dataset, batch_size=parameter[dataset]['batch_si
 
 layer_dims = parameter[dataset]['layer_dims']   # Adjust this based on your model architecture
 
-model = PrunableNeuralModel(layer_dims).to(device)
+model = get_model(layer_dims, device, 'ff')
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
 

@@ -38,26 +38,28 @@ def getLocalRanks(weightMatrix, activationMatrix):
 
         currLayerNumOfNeurons = currentWeights.shape[1]
         nextLayerNumOfNeurons = currentWeights.shape[0]
-        avgActivationPerc = defaultdict(lambda: 0)
-        maxActivationPerc = defaultdict(lambda: 0)
+        avgActivationPerc = torch.zeros(currLayerNumOfNeurons)
+        maxActivationPerc = torch.zeros(currLayerNumOfNeurons)
 
-        sampleSize = sorted(random.sample(range(1, len(weightedActivations)), 5000))
-        for sample in sampleSize:
+        #sampleSize = sorted(random.sample(range(1, 40000), 5000))
+        for sample in range(sampleSize):
             #print(sample)
             for targetNeuron in range(nextLayerNumOfNeurons):
                 totalActivationOfNeuron = weightedActivations[sample, targetNeuron]
-                for srcNeuron in range(currLayerNumOfNeurons):
-                    weight = currentWeights[targetNeuron, srcNeuron]
-                    activation = currentActivations[sample, srcNeuron]
-                    neuralContribution = (abs(weight* activation)*100)/totalActivationOfNeuron
-                    avgActivationPerc[srcNeuron]+= neuralContribution
-                    maxActivationPerc[srcNeuron] = max(maxActivationPerc[srcNeuron], neuralContribution)
-        avgActivationPercTuples = []
-        for neuron in avgActivationPerc.keys():
-            avgActivation= avgActivationPerc[neuron]/ (nextLayerNumOfNeurons * len(sampleSize))
-            avgActivationPercTuples.append([neuron, avgActivation])
+                weight = currentWeights[targetNeuron]
+                activation = currentActivations[sample]
+                neuralContribution = (weight* activation*100)/totalActivationOfNeuron
+                avgActivationPerc+= neuralContribution
+                maxActivationPerc = torch.max(maxActivationPerc, neuralContribution)
 
-        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1], reverse=True)
+        avgActivationPercTuples = []
+        for neuron in range(len(avgActivationPerc)):
+            avgActivation= avgActivationPerc[neuron]/ (nextLayerNumOfNeurons * sampleSize)
+            maxActivation = maxActivationPerc[neuron]
+            avgActivationPercTuples.append([neuron, avgActivation])
+            #avgActivationPercTuples.append([neuron, (avgActivation + maxActivation)//2])
+
+        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1], reverse=False)
         rank = 1
         for neuronInfo in sortedActivationPerc:
             neuronInfo.append(rank)

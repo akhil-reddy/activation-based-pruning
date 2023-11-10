@@ -1,4 +1,3 @@
-from models.feedforward import prune_model_from_rankings, reinit_model
 # Module Imports
 import torch.nn as nn
 import torch.optim as optim
@@ -7,11 +6,11 @@ from torchvision import datasets, transforms
 from constants import parameter 
 
 # Local imports
-from model import get_model
+from models.feedforward import prune_model_from_rankings, reinit_model
 from ranking import *
 
 # Import helper
-from helper import switch
+from helper import switch, get_model
 
 print('Choose a dataset from the below options \n 1. MNIST \n 2. FashionMNIST \n 3. CIFAR-10 \n 4. CIFAR-100')
 print("Enter the value: ")
@@ -33,7 +32,7 @@ train_loader = DataLoader(train_dataset, batch_size=parameter[dataset]['batch_si
 
 layer_dims = parameter[dataset]['layer_dims']   # Adjust this based on your model architecture
 
-model = get_model(layer_dims, device, 'ff')
+model = get_model(layer_dims, device, dataset)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
 

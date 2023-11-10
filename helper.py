@@ -5,14 +5,14 @@ from models.vae import VAE
 
 def get_model(layer_dims, device, dataset):
     # Initialize the model using the custom architecture and move to the selected device
-    if dataset == 'MNIST' or dataset == 'FashionMNIST' :
-        model = FeedForward(layer_dims).to(device)
-    elif dataset == 'CIFAR10' or dataset == 'CIFAR100':
-        model = CNN(layer_dims).to(device)
-    else:
-        model = VAE(layer_dims).to(device)
+    if dataset == "MNIST" or dataset == "FashionMNIST" :
+        return FeedForward(layer_dims).to(device)
+    elif dataset == "CIFAR10" or dataset == "CIFAR100":
+        return CNN(layer_dims).to(device)
+    elif dataset == "VAE" :
+       return VAE(layer_dims).to(device)
 
-    return model
+    return None
 
 def switch(num):
     if num == 1:

@@ -43,7 +43,7 @@ class FeedForward(nn.Module):
         h3.remove()
         return x
 
-    def prune_model_from_rankings(rankings, max_ranking, prune_percent=10):
+    def prune_model_from_rankings(self, rankings, max_ranking, prune_percent=10):
         layers = []
         for layer_index in range(len(rankings)):
             layer = []
@@ -63,7 +63,7 @@ class FeedForward(nn.Module):
     '''
 
 
-    def reinit_model(weights, layers, device, input_layer):
+    def reinit_model(self, weights, layers, device, input_layer):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))

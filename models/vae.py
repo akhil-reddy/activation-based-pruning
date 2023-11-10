@@ -51,7 +51,7 @@ class VAE(nn.Module):
         x_hat = self.decode(z)
         return x_hat, mean, log_var
 
-    def prune_model_from_rankings(rankings, max_ranking, prune_percent=10):
+    def prune_model_from_rankings(self,rankings, max_ranking, prune_percent=10):
         layers = []
         for layer_index in range(len(rankings)):
             layer = []
@@ -69,12 +69,12 @@ class VAE(nn.Module):
         layers are from [1 to n] with n-1 elements
         '''
 
-    def reinit_model(weights, layers, device, input_layer):
+    def reinit_model(self, weights, layers, device, input_layer):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))
 
-        model = FeedForward(layer_dims).to(device)
+        model = VAE(layer_dims).to(device)
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
 

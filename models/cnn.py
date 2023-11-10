@@ -5,9 +5,9 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-class FeedForward(nn.Module):
+class CNN(nn.Module):
     def __init__(self, layer_dims):
-        super(FeedForward, self).__init__()
+        super(CNN, self).__init__()
 
         self.layers = nn.ModuleList()
         self.activation_values = {}
@@ -69,7 +69,7 @@ def reinit_model(weights, layers, device, input_layer):
     for layer in layers:
         layer_dims.append(len([i for i in layer if i == 1]))
 
-    model = FeedForward(layer_dims).to(device)
+    model = CNN(layer_dims).to(device)
     for i in range(len(weights)):
         weights[i] = torch.Tensor.tolist(weights[i])
 

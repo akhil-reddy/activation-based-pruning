@@ -3,12 +3,12 @@ from models.feedforward import FeedForward
 from models.vae import VAE
 
 
-def get_model(layer_dims, device, dataset):
+def get_model(layer_dims, device, dataset,conv_dims=None):
     # Initialize the model using the custom architecture and move to the selected device
     if dataset == "MNIST" or dataset == "FashionMNIST" :
         return FeedForward(layer_dims).to(device)
     elif dataset == "CIFAR10" or dataset == "CIFAR100":
-        return CNN(layer_dims).to(device)
+        return CNN(layer_dims,conv_dims).to(device)
     elif dataset == "VAE" :
        return VAE(layer_dims).to(device)
 

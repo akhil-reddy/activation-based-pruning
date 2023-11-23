@@ -22,13 +22,18 @@ def getRandomScores(weightMatrix):
 
 
 def getLocalRanks(weightMatrix, activationMatrix):
-    numOfHiddenLayers = len(weightMatrix.keys())-1
+    numOfHiddenLayers = 0
+    for layerName in weightMatrix.keys():
+        if 'fc_layers' in layerName:
+            numOfHiddenLayers+=1
+
+    #numOfHiddenLayers = len(weightMatrix.keys())
     #sampleSize = activationMatrix['layers.0.weight'].shape[0]
     networkScores = []
     maxScoreinLayer = []
-    for layer in range(1, numOfHiddenLayers+1):
-        currentWeights = weightMatrix['layers.'+str(2*layer)+'.weight']
-        currentActivations = activationMatrix['layers['+str(2*(layer-1))+']']
+    for layer in range(1, numOfHiddenLayers):
+        currentWeights = weightMatrix['fc_layers.'+str(2*layer)+'.weight']
+        currentActivations = activationMatrix['fc_layers['+str(2*(layer-1))+']']
 
         currentWeights = torch.abs(currentWeights)
         currentActivations = torch.abs(currentActivations)
@@ -72,7 +77,7 @@ def getLocalRanks(weightMatrix, activationMatrix):
         networkScores.append(ranks)
         maxScoreinLayer.append(len(sortedActivationPerc))
 
-    lastLayer = [1] * weightMatrix['layers.' + str(2 *(layer)) + '.weight'].shape[0]
+    lastLayer = [1] * weightMatrix['fc_layers.' + str(2 *(layer)) + '.weight'].shape[0]
     networkScores.append(lastLayer)
     maxScoreinLayer.append(1)
 

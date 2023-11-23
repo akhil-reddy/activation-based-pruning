@@ -1,7 +1,7 @@
 parameter = {
-    'total_epochs': 1000,
-    'inital_iterations': 600,
-    'increment':100,
+    'total_epochs': 100,
+    'inital_iterations': 5,
+    'increment':5,
 
     'MNIST':{
         'normalize':[0.5],

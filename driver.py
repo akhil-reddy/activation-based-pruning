@@ -30,7 +30,10 @@ train_loader = DataLoader(train_dataset, batch_size=parameter[dataset]['batch_si
 # test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 layer_dims = parameter[dataset]['layer_dims']   # Adjust this based on your model architecture
-conv_dims = parameter[dataset]['conv_dims'] 
+try:
+    conv_dims = parameter[dataset]['conv_dims'] 
+except:
+    conv_dims = None
 model = get_model(layer_dims, device, dataset, conv_dims)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)

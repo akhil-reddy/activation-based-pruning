@@ -1,57 +1,62 @@
 import torch
 import torch.nn as nn
-import ssl
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+from torch.autograd import Variable
+import matplotlib.pyplot as plt
+import torchvision.utils as vutils
 
-ssl._create_default_https_context = ssl._create_unverified_context
-
-
+# Define a simple VAE model
 class VAE(nn.Module):
-
-    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=200):
+    def __init__(self):
         super(VAE, self).__init__()
 
-        # encoder
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.LeakyReLU(0.2),
-            nn.Linear(hidden_dim, latent_dim),
-            nn.LeakyReLU(0.2)
+            nn.Conv2d(3, 32, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Flatten()
         )
 
-        # latent mean and variance
-        self.mean_layer = nn.Linear(latent_dim, 2)
-        self.logvar_layer = nn.Linear(latent_dim, 2)
+        self.fc_mu = nn.Linear(256 * 4 * 4, 100)
+        self.fc_logvar = nn.Linear(256 * 4 * 4, 100)
 
-        # decoder
         self.decoder = nn.Sequential(
-            nn.Linear(2, latent_dim),
-            nn.LeakyReLU(0.2),
-            nn.Linear(latent_dim, hidden_dim),
-            nn.LeakyReLU(0.2),
-            nn.Linear(hidden_dim, input_dim),
+            nn.Linear(100, 256 * 4 * 4),
+            nn.ReLU(),
+            nn.Linear(256 * 4 * 4, 128 * 4 * 4),
+            nn.ReLU(),
+            nn.Unflatten(1, (128, 4, 4)),
+            nn.ConvTranspose2d(128, 128, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
             nn.Sigmoid()
         )
 
-    def encode(self, x):
-        x = self.encoder(x)
-        mean, logvar = self.mean_layer(x), self.logvar_layer(x)
-        return mean, logvar
-
-    def reparameterization(self, mean, var):
-        epsilon = torch.randn_like(var)
-        z = mean + var * epsilon
-        return z
-
-    def decode(self, x):
-        return self.decoder(x)
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
 
     def forward(self, x):
-        mean, log_var = self.encode(x)
-        z = self.reparameterization(mean, torch.exp(0.5 * log_var))
-        x_hat = self.decode(z)
-        return x_hat, mean, log_var
+        x = self.encoder(x)
+        mu = self.fc_mu(x)
+        logvar = self.fc_logvar(x)
+        z = self.reparameterize(mu, logvar)
+        x_reconstructed = self.decoder(z)
+        return x_reconstructed, mu, logvar
 
-    def prune_model_from_rankings(self,rankings, max_ranking, prune_percent=10):
+    def prune_model_from_rankings(self, rankings, max_ranking, prune_percent=10):
         layers = []
         for layer_index in range(len(rankings)):
             layer = []
@@ -65,16 +70,16 @@ class VAE(nn.Module):
 
     '''
 
-        weights are from layer (0 to n] with n-1 elements
-        layers are from [1 to n] with n-1 elements
-        '''
+    weights are from layer (0 to n] with n-1 elements
+    layers are from [1 to n] with n-1 elements
+    '''
 
     def reinit_model(self, weights, layers, device, input_layer):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))
 
-        model = VAE(layer_dims).to(device)
+        model = VAE().to(device)
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
 
@@ -109,3 +114,61 @@ class VAE(nn.Module):
                 model.layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
         return model
+
+# Define the loss function for VAE
+def loss_function(recon_x, x, mu, logvar):
+    BCE = nn.BCELoss(reduction='sum')(recon_x, x)
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    return BCE + KLD
+
+# Set up data transformation and loader
+transform = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+])
+
+dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, download=True)
+dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
+
+# Initialize the VAE model and optimizer
+vae = VAE()
+optimizer = optim.Adam(vae.parameters(), lr=1e-3)
+
+# Training loop
+num_epochs = 10
+for epoch in range(num_epochs):
+    for batch_idx, data in enumerate(dataloader):
+        img, _ = data
+        img = Variable(img)
+
+        optimizer.zero_grad()
+
+        recon_batch, mu, logvar = vae(img)
+        loss = loss_function(recon_batch, img, mu, logvar)
+
+        loss.backward()
+        optimizer.step()
+
+        if batch_idx % 100 == 0:
+            print('Epoch [{}/{}], Batch [{}/{}], Loss: {:.4f}'.format(
+                epoch+1, num_epochs, batch_idx+1, len(dataloader), loss.item()
+            ))
+
+            # Visualize original and reconstructed images
+            if batch_idx % 500 == 0:
+                with torch.no_grad():
+                    vae.eval()
+                    sample = img[:4]
+                    recon_sample, _, _ = vae(sample)
+
+                    comparison = torch.cat([sample, recon_sample])
+                    comparison = comparison.view(-1, 3, 64, 64)
+                    comparison = vutils.make_grid(comparison, nrow=4, padding=5, normalize=True)
+
+                    plt.imshow(comparison.permute(1, 2, 0).numpy())
+                    plt.show()
+
+                vae.train()
+
+# Save the trained model
+torch.save(vae.state_dict(), 'vae_celeba.pth')

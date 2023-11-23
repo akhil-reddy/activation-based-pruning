@@ -127,7 +127,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, download=False)
+dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, download=True)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 
 # Initialize the VAE model and optimizer

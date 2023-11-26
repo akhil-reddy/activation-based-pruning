@@ -1,6 +1,5 @@
 from models.cnn import CNN
 from models.feedforward import FeedForward
-from models.vae import VAE
 
 
 def get_model(layer_dims, device, dataset):
@@ -9,9 +8,7 @@ def get_model(layer_dims, device, dataset):
         return FeedForward(layer_dims).to(device)
     elif dataset == "CIFAR10" or dataset == "CIFAR100":
         return CNN(layer_dims).to(device)
-    elif dataset == "VAE" :
-       return VAE(layer_dims).to(device)
-
+    
     return None
 
 def switch(num):

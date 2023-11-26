@@ -7,6 +7,8 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import torchvision.utils as vutils
 
+from ranking import *
+
 ff_layers = [
     nn.Linear(64 * 16 * 16, 128 * 4 * 4),
     nn.Linear(128 * 4 * 4, 256 * 4 * 4),
@@ -127,54 +129,79 @@ def loss_function(recon_x, x, mu, logvar):
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + KLD
 
-# Set up data transformation and loader
-transform = transforms.Compose([
-    transforms.Resize((64, 64)),
-    transforms.ToTensor(),
-])
+def train(dataloader,vae,optimizer,increment=10):
+    num_epochs = increment
+    for epoch in range(num_epochs):
+        for batch_idx, data in enumerate(dataloader):
+            img, _ = data
+            img = Variable(img)
 
-dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, download=True)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
+            optimizer.zero_grad()
 
-# Initialize the VAE model and optimizer
-vae = VAE(ff_layers)
-optimizer = optim.Adam(vae.parameters(), lr=1e-3)
+            recon_batch, mu, logvar = vae(img)
+            loss = loss_function(recon_batch, img, mu, logvar)
 
-# Training loop
-num_epochs = 10
-for epoch in range(num_epochs):
-    for batch_idx, data in enumerate(dataloader):
-        img, _ = data
-        img = Variable(img)
+            loss.backward()
+            optimizer.step()
 
-        optimizer.zero_grad()
+            if batch_idx % 100 == 0:
+                print('Epoch [{}/{}], Batch [{}/{}], Loss: {:.4f}'.format(
+                    epoch+1, num_epochs, batch_idx+1, len(dataloader), loss.item()
+                ))
 
-        recon_batch, mu, logvar = vae(img)
-        loss = loss_function(recon_batch, img, mu, logvar)
+                # Visualize original and reconstructed images
+                if batch_idx % 500 == 0:
+                    with torch.no_grad():
+                        vae.eval()
+                        sample = img[:4]
+                        recon_sample, _, _ = vae(sample)
 
-        loss.backward()
-        optimizer.step()
+                        comparison = torch.cat([sample, recon_sample])
+                        comparison = comparison.view(-1, 3, 64, 64)
+                        comparison = vutils.make_grid(comparison, nrow=4, padding=5, normalize=True)
 
-        if batch_idx % 100 == 0:
-            print('Epoch [{}/{}], Batch [{}/{}], Loss: {:.4f}'.format(
-                epoch+1, num_epochs, batch_idx+1, len(dataloader), loss.item()
-            ))
+                        plt.imshow(comparison.permute(1, 2, 0).numpy())
+                        plt.show()
 
-            # Visualize original and reconstructed images
-            if batch_idx % 500 == 0:
-                with torch.no_grad():
-                    vae.eval()
-                    sample = img[:4]
-                    recon_sample, _, _ = vae(sample)
+                    vae.train()
 
-                    comparison = torch.cat([sample, recon_sample])
-                    comparison = comparison.view(-1, 3, 64, 64)
-                    comparison = vutils.make_grid(comparison, nrow=4, padding=5, normalize=True)
 
-                    plt.imshow(comparison.permute(1, 2, 0).numpy())
-                    plt.show()
+if __name__ == "__main__":   
+    # Set up data transformation and loader
+    transform = transforms.Compose([
+        transforms.Resize((64, 64)),
+        transforms.ToTensor(),
+    ])
 
-                vae.train()
+    dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, download=True)
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 
-# Save the trained model
-torch.save(vae.state_dict(), 'vae_celeba.pth')
+    # Initialize the VAE model and optimizer
+    vae = VAE(ff_layers)
+    optimizer = optim.Adam(vae.parameters(), lr=1e-3)
+
+    train(dataloader,vae,optimizer)
+
+    # Save the trained model
+    torch.save(vae.state_dict(), 'vae_celeba.pth')
+
+    total_epochs = 50
+    initial_iterations = 10
+    increment = 10
+
+    weightMatrix = {}
+    for name, param in vae.state_dict().items():
+        weightMatrix[name] = param
+
+    for i in range(initial_iterations + 1, total_epochs + 1, increment):
+        # Perform pruning and retraining
+        rankings, max_ranking = getLocalRanks(weightMatrix, vae.activation_values)
+        layers = vae.prune_model_from_rankings(rankings, max_ranking)
+        vae = vae.reinit_model(list(weightMatrix.values()), layers, device, 100)
+        optimizer = optim.Adam(vae.parameters(), lr=1e-3)
+        
+        train(dataloader,vae,optimizer,increment=increment)
+      
+        # Update the weight matrix for the next iteration
+        for name, param in vae.state_dict().items():
+            weightMatrix[name] = param

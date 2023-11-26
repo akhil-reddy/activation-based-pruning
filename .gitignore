@@ -3,3 +3,4 @@ notes.txt
 /data/train.csv
 /datasets
 /models/__pycache__/
+/data

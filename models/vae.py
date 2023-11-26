@@ -7,9 +7,17 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import torchvision.utils as vutils
 
+ff_layers = [
+    nn.Linear(64 * 16 * 16, 128 * 4 * 4),
+    nn.Linear(128 * 4 * 4, 256 * 4 * 4),
+    nn.Linear(100, 256 * 4 * 4),
+    nn.Linear(256 * 4 * 4, 128 * 4 * 4),
+    nn.Linear(128 * 4 * 4, 64 * 16 * 16)
+]
+
 # Define a simple VAE model
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, ff_layers):
         super(VAE, self).__init__()
 
         self.encoder = nn.Sequential(
@@ -17,26 +25,24 @@ class VAE(nn.Module):
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
+            nn.Flatten(),
+            ff_layers[0],
             nn.ReLU(),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
+            ff_layers[1],
             nn.ReLU(),
-            nn.Flatten()
         )
 
         self.fc_mu = nn.Linear(256 * 4 * 4, 100)
         self.fc_logvar = nn.Linear(256 * 4 * 4, 100)
 
         self.decoder = nn.Sequential(
-            nn.Linear(100, 256 * 4 * 4),
+            ff_layers[2],
             nn.ReLU(),
-            nn.Linear(256 * 4 * 4, 128 * 4 * 4),
+            ff_layers[3],
             nn.ReLU(),
-            nn.Unflatten(1, (128, 4, 4)),
-            nn.ConvTranspose2d(128, 128, kernel_size=4, stride=2, padding=1),
+            ff_layers[4],
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
+            nn.Unflatten(1, (64, 16, 16)),
             nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
@@ -69,17 +75,13 @@ class VAE(nn.Module):
         return layers
 
     '''
-
-    weights are from layer (0 to n] with n-1 elements
-    layers are from [1 to n] with n-1 elements
+    weights are all weights for FF layers in encoder AND decoder, in sequence 
+    layers are the 1/-1 coded FF layers in encoder AND decoder, in sequence
+    mu_weight is the weight matrix of the mu layer
+    logvar_weight is the weight matrix of the logvar layer
     '''
 
-    def reinit_model(self, weights, layers, device, input_layer):
-        layer_dims = [input_layer]
-        for layer in layers:
-            layer_dims.append(len([i for i in layer if i == 1]))
-
-        model = VAE().to(device)
+    def reinit_model(self, weights, layers, device, mu_weight, logvar_weight):
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
 
@@ -111,7 +113,11 @@ class VAE(nn.Module):
         # Reinitialize new weights to the network
         with torch.no_grad():
             for i in range(len(layers)):
-                model.layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
+                    ff_layers[i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
+
+        model = VAE(ff_layers).to(device)
+        model.fc_mu.weight = mu_weight
+        model.fc_logvar.weight = logvar_weight
 
         return model
 
@@ -131,7 +137,7 @@ dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, 
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 
 # Initialize the VAE model and optimizer
-vae = VAE()
+vae = VAE(ff_layers)
 optimizer = optim.Adam(vae.parameters(), lr=1e-3)
 
 # Training loop

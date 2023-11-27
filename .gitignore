@@ -4,3 +4,6 @@ notes.txt
 /data/train.csv
 /datasets
 /models/__pycache__/
+.DS_Store
+data/
+models/data/

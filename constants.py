@@ -1,6 +1,6 @@
 parameter = {
     'total_epochs': 100,
-    'inital_iterations': 5,
+    'inital_iterations': 2,
     'increment':5,
 
     'MNIST':{

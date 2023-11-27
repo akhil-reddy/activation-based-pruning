@@ -71,7 +71,7 @@ for i in range(inital_iterations + 1, total_epochs + 1, increment):
     rankings, max_ranking = getLocalRanks(weightMatrix, model.activation_values)
     #rankings, max_ranking = getRandomScores(weightMatrix)
     layers = model.prune_model_from_rankings(rankings, max_ranking)
-    model = model.reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0])
+    model = model.reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0], conv_dims)
     optimizer = optim.SGD(model.parameters(), lr=0.1)
     train(model, train_loader, optimizer, criterion, increment)
 

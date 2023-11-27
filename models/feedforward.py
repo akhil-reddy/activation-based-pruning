@@ -63,7 +63,7 @@ class FeedForward(nn.Module):
     '''
 
 
-    def reinit_model(self, weights, layers, device, input_layer):
+    def reinit_model(self, weights, layers, device, input_layer, conv_dims=None):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))

@@ -85,14 +85,21 @@ class CNN(nn.Module):
     '''
 
 
-    def reinit_model(self, weights, layers, device, input_layer):
+    def reinit_model(self, weights, layers, device, input_layer, conv_dims):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))
 
-        model = CNN(layer_dims).to(device)
+        model = CNN(layer_dims, conv_dims).to(device)
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
+
+        with torch.no_grad():
+            for i in range((len(weights)- len(layers))//2):
+                model.conv_layers[3 * i].weight = nn.Parameter(torch.FloatTensor(weights[2*i]))    
+                model.conv_layers[3 * i].bias = nn.Parameter(torch.FloatTensor(weights[2*i + 1]))        
+        
+        weights = weights[2*i+2:]
 
         new_weights = []
         # Format new weights
@@ -122,6 +129,6 @@ class CNN(nn.Module):
         # Reinitialize new weights to the network
         with torch.no_grad():
             for i in range(len(layers)):
-                model.layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
+                model.fc_layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
         return model

@@ -10,7 +10,7 @@ def get_model(layer_dims, device, dataset,conv_dims=None):
     elif dataset == "CIFAR10" or dataset == "CIFAR100":
         return CNN(layer_dims,conv_dims).to(device)
     elif dataset == "VAE" :
-       return VAE(layer_dims).to(device)
+       return VAE(layer_dims).to(device)    
 
     return None
 

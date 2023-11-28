@@ -63,7 +63,6 @@ class VAE(nn.Module):
         z = self.reparameterize(mu, logvar)
         x_reconstructed = self.decoder(z)
         return x_reconstructed, mu, logvar
-    
 
     def prune_model_from_rankings(self, rankings, max_ranking, prune_percent=10):
         layers = []
@@ -183,12 +182,13 @@ if __name__ == "__main__":
 
     train(dataloader,vae,optimizer,0)
 
+
     # Save the trained model
     torch.save(vae.state_dict(), 'vae_celeba.pth')
 
     total_epochs = 50
-    initial_iterations = 1
-    increment = 1
+    initial_iterations = 10
+    increment = 10
 
     weightMatrix = {}
     for name, param in vae.state_dict().items():

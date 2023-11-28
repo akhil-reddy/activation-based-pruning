@@ -30,8 +30,11 @@ train_loader = DataLoader(train_dataset, batch_size=parameter[dataset]['batch_si
 # test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 layer_dims = parameter[dataset]['layer_dims']   # Adjust this based on your model architecture
-
-model = get_model(layer_dims, device, dataset)
+try:
+    conv_dims = parameter[dataset]['conv_dims'] 
+except:
+    conv_dims = None
+model = get_model(layer_dims, device, dataset, conv_dims)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
 
@@ -43,6 +46,7 @@ def train(model, train_loader, optimizer, criterion, epochs):
             X_batch, Y_batch = X_batch.to(device), Y_batch.to(device)
             optimizer.zero_grad()
             outputs = model(X_batch.view(parameter[dataset]['X_batch_view']))  # Adjust the input dimensions 
+
             loss = criterion(outputs, Y_batch)
             loss.backward()
             optimizer.step()
@@ -67,7 +71,7 @@ for i in range(inital_iterations + 1, total_epochs + 1, increment):
     rankings, max_ranking = getLocalRanks(weightMatrix, model.activation_values)
     #rankings, max_ranking = getRandomScores(weightMatrix)
     layers = model.prune_model_from_rankings(rankings, max_ranking)
-    model = model.reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0])
+    model = model.reinit_model(list(weightMatrix.values()), layers, device, layer_dims[0], conv_dims)
     optimizer = optim.SGD(model.parameters(), lr=0.1)
     train(model, train_loader, optimizer, criterion, increment)
 

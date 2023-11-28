@@ -6,20 +6,31 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class CNN(nn.Module):
-    def __init__(self, layer_dims):
+    def __init__(self, layer_dims, conv_dims):
         super(CNN, self).__init__()
 
-        self.layers = nn.ModuleList()
+        self.conv_layers = nn.ModuleList()
+        self.fc_layers = nn.ModuleList()  
         self.activation_values = {}
 
+        
+        for conv_dim in conv_dims:
+            in_channels, out_channels, kernel_size, stride, padding = conv_dim
+            self.conv_layers.append(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding))
+            self.conv_layers.append(nn.ReLU())
+            self.conv_layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            
+        self.flatten = nn.Flatten()
+
+        # Add fully connected layers
         for i in range(1, len(layer_dims)):
-            self.layers.append(nn.Linear(layer_dims[i - 1], layer_dims[i], bias=False))
+            self.fc_layers.append(nn.Linear(layer_dims[i - 1], layer_dims[i], bias=False))
             if i != len(layer_dims) - 1:
                 # Apply ReLU activation except in the last layer
-                self.layers.append(nn.ReLU())
+                self.fc_layers.append(nn.ReLU())
+
         # hook
         self.activation = {}
-
     def getActivation(self, name):
         # the hook signature
         def hook(model, input, output):
@@ -28,21 +39,32 @@ class CNN(nn.Module):
         return hook
 
     def forward(self, x):
-        h1 = self.layers[0].register_forward_hook(self.getActivation('layers[0]'))
-        h2 = self.layers[2].register_forward_hook(self.getActivation('layers[2]'))
-        h3 = self.layers[4].register_forward_hook(self.getActivation('layers[4]'))
+       
+        for conv_layer in self.conv_layers:
+            x = conv_layer(x)
 
-        for layer in self.layers:
-            x = layer(x)
+      
+        x = self.flatten(x)
 
+      
+        h1 = self.fc_layers[0].register_forward_hook(self.getActivation('fc_layers[0]'))
+        h2 = self.fc_layers[2].register_forward_hook(self.getActivation('fc_layers[2]'))
+        h3 = self.fc_layers[4].register_forward_hook(self.getActivation('fc_layers[4]'))
+
+       
+        for fc_layer in self.fc_layers:
+            x = fc_layer(x)
+
+       
         for key, item in self.activation.items():
             self.activation_values[key] = item
 
+        
         h1.remove()
         h2.remove()
         h3.remove()
-        return x
 
+        return x
 
     def prune_model_from_rankings(self, rankings, max_ranking, prune_percent=10):
         layers = []
@@ -63,14 +85,21 @@ class CNN(nn.Module):
     '''
 
 
-    def reinit_model(self, weights, layers, device, input_layer):
+    def reinit_model(self, weights, layers, device, input_layer, conv_dims):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))
 
-        model = CNN(layer_dims).to(device)
+        model = CNN(layer_dims, conv_dims).to(device)
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
+
+        with torch.no_grad():
+            for i in range((len(weights)- len(layers))//2):
+                model.conv_layers[3 * i].weight = nn.Parameter(torch.FloatTensor(weights[2*i]))    
+                model.conv_layers[3 * i].bias = nn.Parameter(torch.FloatTensor(weights[2*i + 1]))        
+        
+        weights = weights[2*i+2:]
 
         new_weights = []
         # Format new weights
@@ -100,6 +129,6 @@ class CNN(nn.Module):
         # Reinitialize new weights to the network
         with torch.no_grad():
             for i in range(len(layers)):
-                model.layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
+                model.fc_layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
         return model

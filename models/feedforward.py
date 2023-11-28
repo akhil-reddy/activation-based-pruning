@@ -6,17 +6,17 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class FeedForward(nn.Module):
-    def __init__(self, layer_dims):
+    def __init__(self, layer_dims, conv_dims = None):
         super(FeedForward, self).__init__()
 
-        self.layers = nn.ModuleList()
+        self.fc_layers = nn.ModuleList()
         self.activation_values = {}
 
         for i in range(1, len(layer_dims)):
-            self.layers.append(nn.Linear(layer_dims[i - 1], layer_dims[i], bias=False))
+            self.fc_layers.append(nn.Linear(layer_dims[i - 1], layer_dims[i], bias=False))
             if i != len(layer_dims) - 1:
                 # Apply ReLU activation except in the last layer
-                self.layers.append(nn.ReLU())
+                self.fc_layers.append(nn.ReLU())
         # hook
         self.activation = {}
 
@@ -28,11 +28,11 @@ class FeedForward(nn.Module):
         return hook
 
     def forward(self, x):
-        h1 = self.layers[0].register_forward_hook(self.getActivation('layers[0]'))
-        h2 = self.layers[2].register_forward_hook(self.getActivation('layers[2]'))
-        h3 = self.layers[4].register_forward_hook(self.getActivation('layers[4]'))
+        h1 = self.fc_layers[0].register_forward_hook(self.getActivation('fc_layers[0]'))
+        h2 = self.fc_layers[2].register_forward_hook(self.getActivation('fc_layers[2]'))
+        h3 = self.fc_layers[4].register_forward_hook(self.getActivation('fc_layers[4]'))
 
-        for layer in self.layers:
+        for layer in self.fc_layers:
             x = layer(x)
 
         for key, item in self.activation.items():
@@ -63,7 +63,7 @@ class FeedForward(nn.Module):
     '''
 
 
-    def reinit_model(self, weights, layers, device, input_layer):
+    def reinit_model(self, weights, layers, device, input_layer, conv_dims=None):
         layer_dims = [input_layer]
         for layer in layers:
             layer_dims.append(len([i for i in layer if i == 1]))
@@ -100,6 +100,6 @@ class FeedForward(nn.Module):
         # Reinitialize new weights to the network
         with torch.no_grad():
             for i in range(len(layers)):
-                model.layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
+                model.fc_layers[2 * i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
         return model

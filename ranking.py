@@ -22,13 +22,18 @@ def getRandomScores(weightMatrix):
 
 
 def getLocalRanks(weightMatrix, activationMatrix):
-    numOfHiddenLayers = len(weightMatrix.keys())-1
+    numOfHiddenLayers = 0
+    for layerName in weightMatrix.keys():
+        if 'fc_layers' in layerName:
+            numOfHiddenLayers+=1
+
+    #numOfHiddenLayers = len(weightMatrix.keys())
     #sampleSize = activationMatrix['layers.0.weight'].shape[0]
     networkScores = []
     maxScoreinLayer = []
-    for layer in range(1, numOfHiddenLayers+1):
-        currentWeights = weightMatrix['layers.'+str(2*layer)+'.weight']
-        currentActivations = activationMatrix['layers['+str(2*(layer-1))+']']
+    for layer in range(1, numOfHiddenLayers):
+        currentWeights = weightMatrix['fc_layers.'+str(2*layer)+'.weight']
+        currentActivations = activationMatrix['fc_layers['+str(2*(layer-1))+']']
 
         currentWeights = torch.abs(currentWeights)
         currentActivations = torch.abs(currentActivations)
@@ -72,7 +77,70 @@ def getLocalRanks(weightMatrix, activationMatrix):
         networkScores.append(ranks)
         maxScoreinLayer.append(len(sortedActivationPerc))
 
-    lastLayer = [1] * weightMatrix['layers.' + str(2 *(layer)) + '.weight'].shape[0]
+    lastLayer = [1] * weightMatrix['fc_layers.' + str(2 *(layer)) + '.weight'].shape[0]
+    networkScores.append(lastLayer)
+    maxScoreinLayer.append(1)
+
+    return networkScores, maxScoreinLayer
+
+
+def getRanksForVAE(weightMatrix, activationMatrix):
+    numOfHiddenLayers = 0
+    for layerName in weightMatrix.keys():
+        if 'fc_layers' in layerName:
+            numOfHiddenLayers+=1
+
+    #numOfHiddenLayers = len(weightMatrix.keys())
+    #sampleSize = activationMatrix['layers.0.weight'].shape[0]
+    networkScores = []
+    maxScoreinLayer = []
+    for layer in range(1, numOfHiddenLayers):
+        currentWeights = weightMatrix['fc_layers.'+str(2*layer)+'.weight']
+        currentActivations = activationMatrix['fc_layers['+str(2*(layer-1))+']']
+
+        currentWeights = torch.abs(currentWeights)
+        currentActivations = torch.abs(currentActivations)
+
+        weightedActivations = np.dot(currentActivations, currentWeights.T)
+        sampleSize = weightedActivations.shape[0]
+
+        currLayerNumOfNeurons = currentWeights.shape[1]
+        nextLayerNumOfNeurons = currentWeights.shape[0]
+        avgActivationPerc = torch.zeros(currLayerNumOfNeurons)
+        maxActivationPerc = torch.zeros(currLayerNumOfNeurons)
+
+        #sampleSize = sorted(random.sample(range(1, 40000), 5000))
+        for sample in range(sampleSize):
+            #print(sample)
+            for targetNeuron in range(nextLayerNumOfNeurons):
+                totalActivationOfNeuron = weightedActivations[sample, targetNeuron]
+                weight = currentWeights[targetNeuron]
+                activation = currentActivations[sample]
+                neuralContribution = (weight* activation*100)/totalActivationOfNeuron
+                avgActivationPerc+= neuralContribution
+                maxActivationPerc = torch.max(maxActivationPerc, neuralContribution)
+
+        avgActivationPercTuples = []
+        for neuron in range(len(avgActivationPerc)):
+            avgActivation= avgActivationPerc[neuron]/ (nextLayerNumOfNeurons * sampleSize)
+            maxActivation = maxActivationPerc[neuron]
+            avgActivationPercTuples.append([neuron, avgActivation])
+            #avgActivationPercTuples.append([neuron, (avgActivation + maxActivation)//2])
+
+        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1], reverse=False)
+        rank = 1
+        for neuronInfo in sortedActivationPerc:
+            neuronInfo.append(rank)
+            rank+=1
+
+        ranks = [0]* len(sortedActivationPerc)
+        for i in range(len(sortedActivationPerc)):
+            ranks[sortedActivationPerc[i][0]] = sortedActivationPerc[i][2]
+        
+        networkScores.append(ranks)
+        maxScoreinLayer.append(len(sortedActivationPerc))
+
+    lastLayer = [1] * weightMatrix['fc_layers.' + str(2 *(layer)) + '.weight'].shape[0]
     networkScores.append(lastLayer)
     maxScoreinLayer.append(1)
 

@@ -1,7 +1,7 @@
 parameter = {
-    'total_epochs': 1000,
-    'inital_iterations': 600,
-    'increment':100,
+    'total_epochs': 50,
+    'inital_iterations': 3,
+    'increment':5,
 
     'MNIST':{
         'normalize':[0.5],
@@ -16,16 +16,18 @@ parameter = {
         'X_batch_view': [-1,784] # input dimensions
     },
     'CIFAR10':{
-        'normalize':[0.5, 0.5, 0.5],
-        'batch_size': 41000,
-        'layer_dims':[3072, 512, 256, 10], # 60.64
-        'X_batch_view': [-1, 3072] # input dimensions
+    'normalize': [0.5, 0.5, 0.5], 
+    'batch_size': 128,  
+    'conv_dims': [(3, 16, 3, 1, 1), (16, 32, 3, 1, 1)],
+    'layer_dims': [32 * 8 * 8, 256, 128, 10],
+    'X_batch_view': [-1, 3, 32, 32] 
     },
      'CIFAR100':{
-        'normalize':[0.5, 0.5, 0.5],
-        'batch_size': 41000,
-        'layer_dims':[3072, 512, 256, 128, 100], # 22.37
-        'X_batch_view': [-1, 3072] # input dimensions
+     'normalize': [0.5, 0.5, 0.5],  
+    'batch_size': 128, 
+    'conv_dims': [(3, 16, 3, 1, 1), (16, 32, 3, 1, 1)], 
+    'layer_dims': [32 * 8 * 8, 256, 128, 100],
+    'X_batch_view': [-1, 3, 32, 32] 
     }
     # 46.36 - 49.1
 }

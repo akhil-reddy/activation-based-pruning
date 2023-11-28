@@ -1,6 +1,10 @@
+.DS_Store
 notes.txt
 /data/fashion-mnist_train.csv
 /data/train.csv
 /datasets
 /models/__pycache__/
-/data
+.DS_Store
+data/
+models/data/
+

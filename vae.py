@@ -10,11 +10,11 @@ import torchvision.utils as vutils
 from ranking import *
 
 ff_layers = [
-    nn.Linear(64 * 16 * 16, 128 * 4 * 4),
-    nn.Linear(128 * 4 * 4, 256 * 4 * 4),
-    nn.Linear(100, 256 * 4 * 4),
-    nn.Linear(256 * 4 * 4, 128 * 4 * 4),
-    nn.Linear(128 * 4 * 4, 64 * 16 * 16)
+    nn.Linear(64 * 16 * 16, 128 * 4 * 4, bias=False),
+    nn.Linear(128 * 4 * 4, 256 * 4 * 4, bias=False),
+    nn.Linear(100, 256 * 4 * 4, bias=False),
+    nn.Linear(256 * 4 * 4, 128 * 4 * 4, bias=False),
+    nn.Linear(128 * 4 * 4, 64 * 16 * 16, bias=False)
 ]
 
 # Define a simple VAE model
@@ -34,8 +34,8 @@ class VAE(nn.Module):
             nn.ReLU(),
         )
 
-        self.fc_mu = nn.Linear(256 * 4 * 4, 100)
-        self.fc_logvar = nn.Linear(256 * 4 * 4, 100)
+        self.fc_mu = nn.Linear(256 * 4 * 4, 100, bias=False)
+        self.fc_logvar = nn.Linear(256 * 4 * 4, 100, bias=False)
 
         self.decoder = nn.Sequential(
             ff_layers[2],
@@ -83,7 +83,7 @@ class VAE(nn.Module):
     logvar_weight is the weight matrix of the logvar layer
     '''
 
-    def reinit_model(self, weights, layers, device, mu_weight, logvar_weight):
+    def reinit_model(self, weights, layers, device):
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
 
@@ -118,8 +118,16 @@ class VAE(nn.Module):
                     ff_layers[i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
         model = VAE(ff_layers).to(device)
-        model.fc_mu.weight = mu_weight
-        model.fc_logvar.weight = logvar_weight
+        model.fc_mu.weight = weights[6]
+        model.fc_logvar.weight = weights[7]
+        model.encoder[0].weight = weights[0]
+        model.encoder[0].bias = weights[1]
+        model.encoder[2].weight = weights[2]
+        model.encoder[2].bias = weights[3]
+        model.encoder[7].weight = weights[11]
+        model.encoder[7].bias = weights[12]
+        model.encoder[9].weight = weights[13]
+        model.encoder[9].bias = weights[14]
 
         return model
 
@@ -180,8 +188,7 @@ if __name__ == "__main__":
     vae = VAE(ff_layers)
     optimizer = optim.Adam(vae.parameters(), lr=1e-3)
 
-    train(dataloader,vae,optimizer,0)
-
+    train(dataloader,vae,optimizer)
 
     # Save the trained model
     torch.save(vae.state_dict(), 'vae_celeba.pth')
@@ -189,6 +196,7 @@ if __name__ == "__main__":
     total_epochs = 50
     initial_iterations = 10
     increment = 10
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     weightMatrix = {}
     for name, param in vae.state_dict().items():
@@ -196,9 +204,9 @@ if __name__ == "__main__":
 
     for i in range(initial_iterations + 1, total_epochs + 1, increment):
         # Perform pruning and retraining
-        rankings, max_ranking = getLocalRanks(weightMatrix, vae.activation_values)
+        rankings, max_ranking = getRandomScores(weightMatrix)
         layers = vae.prune_model_from_rankings(rankings, max_ranking)
-        vae = vae.reinit_model(list(weightMatrix.values()), layers, device, 100)
+        vae = vae.reinit_model(list(weightMatrix.values()), layers, device)
         optimizer = optim.Adam(vae.parameters(), lr=1e-3)
         
         train(dataloader,vae,optimizer,increment=increment)

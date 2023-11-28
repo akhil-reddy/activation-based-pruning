@@ -1,6 +1,6 @@
 from models.cnn import CNN
 from models.feedforward import FeedForward
-from models.vae import VAE
+from vae import VAE
 
 
 def get_model(layer_dims, device, dataset,conv_dims=None):

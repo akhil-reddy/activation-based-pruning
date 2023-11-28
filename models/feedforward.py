@@ -6,7 +6,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class FeedForward(nn.Module):
-    def __init__(self, layer_dims):
+    def __init__(self, layer_dims, conv_dims = None):
         super(FeedForward, self).__init__()
 
         self.fc_layers = nn.ModuleList()

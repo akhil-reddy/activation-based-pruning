@@ -6,7 +6,7 @@ from collections import defaultdict
 def getRandomScores(weightMatrix):
     networkScores = []
     maxScoreinLayer = []
-    what_i_need = ['encoder.5.weight', 'encoder.7.weight', 'decoder.0.weight', 'decoder.2.weight', 'decoder.4.weight']
+    what_i_need = ['encoder.5.weight', 'encoder.7.weight', 'decoder.0.weight', 'decoder.2.weight']
     for index in (what_i_need):
         # for neuron_Num in range(1, weightMatrix['layers.'+str(2*index)+'.weight'].shape[1]+1):
         # layerScores.append(random.randint(1, 200))

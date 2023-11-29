@@ -88,12 +88,13 @@ class VAE(nn.Module):
             weights[i] = torch.Tensor.tolist(weights[i])
 
         new_weights = []
+        ff_weights = weights[4:6] + weights[8:11]
         # Format new weights
         for i in range(len(layers)):
             layer_weights = []
             curr_layer_pruned_neurons = []
             for j in range(len(layers[i])):
-                neuron_weights = weights[i][j]
+                neuron_weights = ff_weights[i][j]
                 # Neuron to prune
                 if layers[i][j] == -1:
                     if i + 1 != len(layers):
@@ -117,17 +118,21 @@ class VAE(nn.Module):
             for i in range(len(layers)):
                     ff_layers[i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
+        ff_layers[4].weight = weights[10]
         model = VAE(ff_layers).to(device)
-        model.fc_mu.weight = weights[6]
-        model.fc_logvar.weight = weights[7]
+
         model.encoder[0].weight = weights[0]
         model.encoder[0].bias = weights[1]
         model.encoder[2].weight = weights[2]
         model.encoder[2].bias = weights[3]
-        model.encoder[7].weight = weights[11]
-        model.encoder[7].bias = weights[12]
-        model.encoder[9].weight = weights[13]
-        model.encoder[9].bias = weights[14]
+
+        model.fc_mu.weight = weights[6]
+        model.fc_logvar.weight = weights[7]
+
+        model.decoder[7].weight = weights[11]
+        model.decoder[7].bias = weights[12]
+        model.decoder[9].weight = weights[13]
+        model.decoder[9].bias = weights[14]
 
         return model
 

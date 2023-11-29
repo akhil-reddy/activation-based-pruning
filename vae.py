@@ -102,15 +102,15 @@ class VAE(nn.Module):
                     layer_weights.append(neuron_weights)
             new_weights.append(layer_weights)
 
-            if i + 1 != len(layers):
-                # Live neurons
-                live = [x for x in list(range(len(layers[i]))) if x not in curr_layer_pruned_neurons]
-                for k in range(len(layers[i + 1])):
-                    live_outflow = []
-                    # Only weights from live neurons in the current layer
-                    for j in live:
-                        live_outflow.append(weights[i + 1][k][j])
-                    weights[i + 1][k] = live_outflow
+            # Live neurons
+            live = [x for x in list(range(len(layers[i]))) if x not in curr_layer_pruned_neurons]
+            for k in range(len(layers[i + 1])):
+                live_outflow = []
+                # Only weights from live neurons in the current layer
+                for j in live:
+                    print(i+1, k, j)
+                    live_outflow.append(ff_weights[i + 1][k][j])
+                ff_weights[i + 1][k] = live_outflow
 
         # Reinitialize new weights to the network
         with torch.no_grad():

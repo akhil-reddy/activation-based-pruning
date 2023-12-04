@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -206,7 +205,7 @@ if __name__ == "__main__":
     vae = VAE(ff_layers)
     optimizer = optim.Adam(vae.parameters(), lr=1e-3)
 
-    train(dataloader,vae,optimizer)
+    #train(dataloader,vae,optimizer)
 
     # Save the trained model
     torch.save(vae.state_dict(), 'vae_celeba.pth')

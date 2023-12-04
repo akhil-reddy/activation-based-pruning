@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -10,11 +9,11 @@ import torchvision.utils as vutils
 from ranking import *
 
 ff_layers = [
-    nn.Linear(64 * 16 * 16, 128 * 4 * 4),
-    nn.Linear(128 * 4 * 4, 256 * 4 * 4),
-    nn.Linear(100, 256 * 4 * 4),
-    nn.Linear(256 * 4 * 4, 128 * 4 * 4),
-    nn.Linear(128 * 4 * 4, 64 * 16 * 16)
+    nn.Linear(64 * 16 * 16, 128 * 4 * 4, bias=False),
+    nn.Linear(128 * 4 * 4, 256 * 4 * 4, bias=False),
+    nn.Linear(100, 256 * 4 * 4, bias=False),
+    nn.Linear(256 * 4 * 4, 128 * 4 * 4, bias=False),
+    nn.Linear(128 * 4 * 4, 64 * 16 * 16, bias=False)
 ]
 
 # Define a simple VAE model
@@ -34,8 +33,8 @@ class VAE(nn.Module):
             nn.ReLU(),
         )
 
-        self.fc_mu = nn.Linear(256 * 4 * 4, 100)
-        self.fc_logvar = nn.Linear(256 * 4 * 4, 100)
+        self.fc_mu = nn.Linear(256 * 4 * 4, 100, bias=False)
+        self.fc_logvar = nn.Linear(256 * 4 * 4, 100, bias=False)
 
         self.decoder = nn.Sequential(
             ff_layers[2],
@@ -83,21 +82,24 @@ class VAE(nn.Module):
     logvar_weight is the weight matrix of the logvar layer
     '''
 
-    def reinit_model(self, weights, layers, device, mu_weight, logvar_weight):
+    def reinit_model(self, weights, layers, device):
         for i in range(len(weights)):
             weights[i] = torch.Tensor.tolist(weights[i])
 
         new_weights = []
+        ff_weights = weights[4:7] + weights[8:11]
+        mu_weight = weights[6]
+        logvar_weight = weights[7]
+
         # Format new weights
         for i in range(len(layers)):
             layer_weights = []
             curr_layer_pruned_neurons = []
             for j in range(len(layers[i])):
-                neuron_weights = weights[i][j]
+                neuron_weights = ff_weights[i][j]
                 # Neuron to prune
                 if layers[i][j] == -1:
-                    if i + 1 != len(layers):
-                        curr_layer_pruned_neurons.append(j)
+                    curr_layer_pruned_neurons.append(j)
                 else:
                     layer_weights.append(neuron_weights)
             new_weights.append(layer_weights)
@@ -106,20 +108,43 @@ class VAE(nn.Module):
                 # Live neurons
                 live = [x for x in list(range(len(layers[i]))) if x not in curr_layer_pruned_neurons]
                 for k in range(len(layers[i + 1])):
-                    live_outflow = []
-                    # Only weights from live neurons in the current layer
-                    for j in live:
-                        live_outflow.append(weights[i + 1][k][j])
-                    weights[i + 1][k] = live_outflow
+                    # Special case of mu & sigma
+                    if i + 1 == 2:
+                        mu_outflow = []
+                        logvar_outflow = []
+                        for j in live:
+                            mu_outflow.append(mu_weight[k][j])
+                            logvar_outflow.append(logvar_weight[k][j])
+                        mu_weight[k] = mu_outflow
+                        logvar_weight[k] = logvar_outflow
+                    else:
+                        # Only weights from live neurons in the current layer
+                        live_outflow = []
+                        for j in live:
+                            live_outflow.append(ff_weights[i + 1][k][j])
+                        ff_weights[i + 1][k] = live_outflow
 
+        del layers[2]
+        del new_weights[2]
         # Reinitialize new weights to the network
         with torch.no_grad():
             for i in range(len(layers)):
                     ff_layers[i].weight = nn.Parameter(torch.FloatTensor(new_weights[i]))
 
         model = VAE(ff_layers).to(device)
-        model.fc_mu.weight = mu_weight
-        model.fc_logvar.weight = logvar_weight
+
+        model.encoder[0].weight = nn.Parameter(torch.FloatTensor(weights[0]))
+        model.encoder[0].bias = nn.Parameter(torch.FloatTensor(weights[1]))
+        model.encoder[2].weight = nn.Parameter(torch.FloatTensor(weights[2]))
+        model.encoder[2].bias = nn.Parameter(torch.FloatTensor(weights[3]))
+
+        model.fc_mu.weight = nn.Parameter(torch.FloatTensor(mu_weight))
+        model.fc_logvar.weight = nn.Parameter(torch.FloatTensor(logvar_weight))
+
+        model.decoder[7].weight = nn.Parameter(torch.FloatTensor(weights[11]))
+        model.decoder[7].bias = nn.Parameter(torch.FloatTensor(weights[12]))
+        model.decoder[9].weight = nn.Parameter(torch.FloatTensor(weights[13]))
+        model.decoder[9].bias = nn.Parameter(torch.FloatTensor(weights[14]))
 
         return model
 
@@ -180,15 +205,15 @@ if __name__ == "__main__":
     vae = VAE(ff_layers)
     optimizer = optim.Adam(vae.parameters(), lr=1e-3)
 
-    train(dataloader,vae,optimizer,0)
-
+    train(dataloader,vae,optimizer)
 
     # Save the trained model
     torch.save(vae.state_dict(), 'vae_celeba.pth')
 
-    total_epochs = 50
-    initial_iterations = 10
-    increment = 10
+    total_epochs = 10
+    initial_iterations = 5
+    increment = 5
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     weightMatrix = {}
     for name, param in vae.state_dict().items():
@@ -196,9 +221,9 @@ if __name__ == "__main__":
 
     for i in range(initial_iterations + 1, total_epochs + 1, increment):
         # Perform pruning and retraining
-        rankings, max_ranking = getLocalRanks(weightMatrix, vae.activation_values)
+        rankings, max_ranking = getRandomScoresVAE(weightMatrix)
         layers = vae.prune_model_from_rankings(rankings, max_ranking)
-        vae = vae.reinit_model(list(weightMatrix.values()), layers, device, 100)
+        vae = vae.reinit_model(list(weightMatrix.values()), layers, device)
         optimizer = optim.Adam(vae.parameters(), lr=1e-3)
         
         train(dataloader,vae,optimizer,increment=increment)

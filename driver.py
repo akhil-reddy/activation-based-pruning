@@ -38,8 +38,8 @@ model = get_model(layer_dims, device, dataset, conv_dims)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
 
-log_file = open('training_logwithoutPruning.txt', 'w')
-#log_file = open('training_logwithPruning.txt', 'w')
+#log_file = open('training_logwithoutPruning.txt', 'w')
+log_file = open('training_logwithPruning.txt', 'w')
 #log_file = open('training_logworstPruning.txt', 'w')
 # Modified Training Loop
 def train(model, train_loader, optimizer, criterion, epochs):

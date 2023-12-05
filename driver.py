@@ -38,6 +38,9 @@ model = get_model(layer_dims, device, dataset, conv_dims)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1)
 
+#log_file = open('training_logwithoutPruning.txt', 'w')
+log_file = open('training_logwithPruning.txt', 'w')
+#log_file = open('training_logworstPruning.txt', 'w')
 # Modified Training Loop
 def train(model, train_loader, optimizer, criterion, epochs):
     model.train()
@@ -56,7 +59,9 @@ def train(model, train_loader, optimizer, criterion, epochs):
                 with torch.no_grad():
                     predictions = torch.argmax(outputs, dim=1).cpu().numpy()
                     accuracy = (predictions == Y_batch.cpu().numpy()).mean()
-                    print(f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%")
+                    log_message= f"Epoch: {epoch + 1}, Batch: {i}, Loss: {loss.item()}, Accuracy: {accuracy * 100}%\n"
+                    print(log_message, end='')
+                    log_file.write(log_message)
 
 total_epochs = parameter['total_epochs']
 inital_iterations = parameter['inital_iterations']
@@ -78,3 +83,4 @@ for i in range(inital_iterations + 1, total_epochs + 1, increment):
     for name, param in model.state_dict().items():
         weightMatrix[name] = param
     
+log_file.close()

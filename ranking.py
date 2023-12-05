@@ -20,6 +20,22 @@ def getRandomScores(weightMatrix):
 
     return networkScores, maxScoreinLayer
 
+def getRandomScoresVAE(weightMatrix):
+    networkScores = []
+    maxScoreinLayer = []
+    what_i_need = ['encoder.5.weight', 'encoder.7.weight', 'fc_mu.weight',
+                   'decoder.0.weight', 'decoder.2.weight', 'decoder.4.weight']
+    for index in what_i_need:
+        layerScores = list(range(1, weightMatrix[index].shape[0] + 1))
+        random.shuffle(layerScores)
+        networkScores.append(layerScores)
+        if index == 'fc_mu.weight' or index == 'decoder.4.weight':
+            maxScoreinLayer.append(2*weightMatrix[index].shape[0])
+        else:
+            maxScoreinLayer.append(weightMatrix[index].shape[0])
+
+    return networkScores, maxScoreinLayer
+
 
 def getLocalRanks(weightMatrix, activationMatrix):
     numOfHiddenLayers = 0

@@ -1,17 +1,17 @@
 parameter = {
-    'total_epochs': 50,
-    'inital_iterations': 3,
-    'increment':5,
+    'total_epochs': 100,
+    'inital_iterations': 30,
+    'increment':15,
 
     'MNIST':{
         'normalize':[0.5],
-        'batch_size': 41000,
+        'batch_size': 5000,
         'layer_dims':[784, 50, 30, 10],
         'X_batch_view': [-1,784] # input dimensions
     },
     'FashionMNIST':{
         'normalize':[0.5],
-        'batch_size': 41000,
+        'batch_size': 5000,
         'layer_dims':[784, 50, 30, 10],
         'X_batch_view': [-1,784] # input dimensions
     },
@@ -29,7 +29,4 @@ parameter = {
     'layer_dims': [32 * 8 * 8, 256, 128, 100],
     'X_batch_view': [-1, 3, 32, 32] 
     }
-    # 46.36 - 49.1
 }
-# CIFAR 100 and Collab
-# Graph of training accuray vs no of epochs - random pruning, our pruning (our should have shallower)

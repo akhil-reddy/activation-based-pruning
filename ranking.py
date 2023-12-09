@@ -38,6 +38,7 @@ def getRandomScoresVAE(weightMatrix):
 
 
 def getLocalRanks(weightMatrix, activationMatrix):
+    contribBasedPruning = True
     numOfHiddenLayers = 0
     for layerName in weightMatrix.keys():
         if 'fc_layers' in layerName:
@@ -80,7 +81,7 @@ def getLocalRanks(weightMatrix, activationMatrix):
             avgActivationPercTuples.append([neuron, avgActivation])
             #avgActivationPercTuples.append([neuron, (avgActivation + maxActivation)//2])
 
-        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1], reverse=False)
+        sortedActivationPerc = sorted(avgActivationPercTuples, key=lambda x: x[1], reverse=contribBasedPruning)
         rank = 1
         for neuronInfo in sortedActivationPerc:
             neuronInfo.append(rank)

@@ -221,7 +221,7 @@ if __name__ == "__main__":
     for i in range(initial_iterations + 1, total_epochs + 1, increment):
         # Perform pruning and retraining
         rankings, max_ranking = getRandomScoresVAE(weightMatrix)
-        # rankings, max_ranking = getLocalRanks(weightMatrix, vae.activation_values)
+        # rankings, max_ranking = getRanksForVAE(weightMatrix, vae.activation_values)
         layers = vae.prune_model_from_rankings(rankings, max_ranking)
         vae = vae.reinit_model(list(weightMatrix.values()), layers, device)
         optimizer = optim.Adam(vae.parameters(), lr=1e-3)

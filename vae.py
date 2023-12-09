@@ -191,7 +191,12 @@ def train(dataloader,vae,optimizer,increment=10):
                     vae.train()
 
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
+    total_epochs = 10
+    initial_iterations = 5
+    increment = 5
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # Set up data transformation and loader
     transform = transforms.Compose([
         transforms.Resize((64, 64)),
@@ -199,21 +204,15 @@ if __name__ == "__main__":
     ])
 
     dataset = datasets.CelebA(root='data/celeba', split='all', transform=transform, download=True)
-    dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=False, num_workers=4)
 
     # Initialize the VAE model and optimizer
     vae = VAE(ff_layers)
     optimizer = optim.Adam(vae.parameters(), lr=1e-3)
 
-    train(dataloader,vae,optimizer)
-
+    train(dataloader,vae,optimizer, initial_iterations)
     # Save the trained model
     torch.save(vae.state_dict(), 'vae_celeba.pth')
-
-    total_epochs = 10
-    initial_iterations = 5
-    increment = 5
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     weightMatrix = {}
     for name, param in vae.state_dict().items():
@@ -222,6 +221,7 @@ if __name__ == "__main__":
     for i in range(initial_iterations + 1, total_epochs + 1, increment):
         # Perform pruning and retraining
         rankings, max_ranking = getRandomScoresVAE(weightMatrix)
+        # rankings, max_ranking = getLocalRanks(weightMatrix, vae.activation_values)
         layers = vae.prune_model_from_rankings(rankings, max_ranking)
         vae = vae.reinit_model(list(weightMatrix.values()), layers, device)
         optimizer = optim.Adam(vae.parameters(), lr=1e-3)

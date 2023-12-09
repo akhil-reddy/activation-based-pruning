@@ -1,4 +1,8 @@
-# CSCI 567 - Machine Learning
+# Neural Importance-based Train-time Pruning
+
+## How to download the datasets?
+
+Datasets are implicitly downloaded onto your local Python virtual environment by Torch. As the files are executed, internal checks download the dataset for the very first time only. Explicit downloads aren't required. 
 
 ## How to run the model? 
 
@@ -21,7 +25,7 @@
 
 Run vae.py with toggling between lines 223 and 224 for switching between randomised pruning and rank-based pruning.
 
-## How to generate the plots?
+## How to generate the comparison plots for the classification tasks?
 
 Example for running a comparison between a feed forward network without pruning, with importance based pruning and with randomised pruning -
 
@@ -30,7 +34,3 @@ Example for running a comparison between a feed forward network without pruning,
   - Now set 'total_epochs' as 100, 'inital_iterations' as 30 and 'increment' as 10, run the driver and make sure contribBasedPruning set as True (With importance based pruning) and the log file enabled in driver.py is training_logwithPruning.txt
   - Now set 'total_epochs' as 100, 'inital_iterations' as 30 and 'increment' as 10, run the driver and make sure contribBasedPruning set as False (With importance based pruning) and log file enabled in driver.py is training_logworstPruning.txt
 - Run plot.py to generate the plots for viewing the pyplots for accuracy.
-
-## How to download the datasets
-
-Datasets are automatically downloaded onto your local Python virtual environment by Torch. As the files are executed, internal checks download the dataset for the first time. No explicit download needed. 

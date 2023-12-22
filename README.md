@@ -1,7 +1,7 @@
 # Neural Importance-based Train-time Pruning
 
 `Note: The project is structured for rapid experimentation and inference, and therefore might be less readable at times. 
-Please refer the report for a structured reading.`
+Please refer to the report for a structured reading.`
 
 ## How to download the datasets?
 

@@ -1,5 +1,8 @@
 # Neural Importance-based Train-time Pruning
 
+`Note: The project is structured for rapid experimentation and inference, and therefore might be less readable at times. 
+Please refer the report for a structured reading.`
+
 ## How to download the datasets?
 
 Datasets are implicitly downloaded onto your local Python virtual environment by Torch. As the files are executed, internal checks download the dataset for the very first time only. Explicit downloads aren't required. 
